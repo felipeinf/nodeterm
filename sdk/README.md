@@ -63,3 +63,61 @@ await runtime.start();
 ```
 
 Session events emitted before a connector subscribes are replayed by default, so short-lived handlers can emit and return without losing output.
+
+## Interactive Input
+
+Connectors can send input, resize, and close events through the same session channel. A future CLI can map these events to `node-pty`, while a Telegram connector can map them to chat messages.
+
+```ts
+async handler(request, context) {
+  const session = context.createSession(request);
+
+  session.on("input", (event) => {
+    process.stdout.write(event.data);
+  });
+
+  session.on("resize", (event) => {
+    console.log(`resize ${event.cols}x${event.rows}`);
+  });
+
+  session.on("close", () => {
+    console.log("session closed");
+  });
+
+  return session.response();
+}
+```
+
+## Test Connector
+
+`MemoryConnector` is exported from `@nodeterm/sdk/testing` for tests and examples.
+
+```ts
+import { createRuntime } from "@nodeterm/sdk";
+import { MemoryConnector } from "@nodeterm/sdk/testing";
+
+const connector = new MemoryConnector();
+const runtime = createRuntime({
+  connectors: [connector],
+  async handler(request) {
+    return {
+      requestId: request.id,
+      ok: true,
+      payload: request.payload,
+      completedAt: new Date()
+    };
+  }
+});
+
+await runtime.start();
+const response = await connector.send({ text: "hello" });
+```
+
+## Development
+
+```bash
+npm install
+npm run build
+npm test
+npm pack --dry-run
+```
