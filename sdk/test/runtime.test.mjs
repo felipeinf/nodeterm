@@ -125,3 +125,31 @@ describe("createRuntime", () => {
     ]);
     await runtime.stop();
   });
+
+  it("routes input, resize, and close events to the session", async () => {
+    const connector = new MemoryConnector("memory");
+    const received = [];
+    const runtime = createRuntime({
+      connectors: [connector],
+      async handler(request, context) {
+        const session = context.createSession(request);
+        session.on("input", (event) => received.push(event));
+        session.on("resize", (event) => received.push(event));
+        session.on("close", (event) => received.push(event));
+        return session.response();
+      }
+    });
+
+    await runtime.start();
+    const response = await connector.send({ job: "interactive" });
+    response.session.emit({ type: "input", data: "ls\n" });
+    response.session.emit({ type: "resize", cols: 120, rows: 40 });
+    response.session.emit({ type: "close", reason: "client disconnected" });
+
+    assert.deepEqual(received, [
+      { type: "input", data: "ls\n" },
+      { type: "resize", cols: 120, rows: 40 },
+      { type: "close", reason: "client disconnected" }
+    ]);
+    await runtime.stop();
+  });
