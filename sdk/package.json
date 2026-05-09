@@ -1,0 +1,6 @@
+{
+  "name": "@nodeterm/sdk",
+  "version": "0.1.0",
+  "description": "Generic Node.js SDK for request/response and session-based communication between local machines and external tools.",
+  "type": "module"
+}
