@@ -1,7 +1,9 @@
+import { randomUUID } from "node:crypto";
 import type {
   Actor,
   Connector,
   ConnectorHandler,
+  ControlRequest,
   ControlResponse
 } from "../types.js";
 
@@ -38,3 +40,30 @@ export class MemoryConnector<
   isStarted() {
     return this.started;
   }
+
+  async send(
+    payload: TRequestPayload,
+    options: MemoryRequestOptions<TRequestMeta> = {}
+  ): Promise<ControlResponse<TResponsePayload, TResponseMeta>> {
+    return this.dispatch({
+      id: options.id ?? randomUUID(),
+      source: options.source ?? this.name,
+      ...(options.actor === undefined ? {} : { actor: options.actor }),
+      payload,
+      ...(options.meta === undefined ? {} : { meta: options.meta }),
+      receivedAt: options.receivedAt ?? new Date()
+    });
+  }
+
+  async dispatch(
+    request: ControlRequest<TRequestPayload, TRequestMeta>
+  ): Promise<ControlResponse<TResponsePayload, TResponseMeta>> {
+    if (!this.handler) {
+      throw new Error(`MemoryConnector "${this.name}" is not started.`);
+    }
+
+    const response = await this.handler(request);
+    this.responses.push(response);
+    return response;
+  }
+}
