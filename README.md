@@ -116,6 +116,7 @@ const response = await connector.send({ text: "hello" });
 ## Development
 
 ```bash
+cd sdk
 npm install
 npm run build
 npm test
