@@ -1,8 +1,12 @@
 import type {
   Connector,
+  ControlRequest,
+  ControlResponse,
   ControlRuntime,
+  RuntimeContext,
   RuntimeHandler
 } from "./types.js";
+import { LocalSession } from "./session.js";
 
 export type RuntimeOptions<
   TRequestPayload = unknown,
@@ -59,8 +63,25 @@ class DefaultRuntime<
   }
 
   private async handle(
-    request: import("./types.js").ControlRequest<TRequestPayload, TRequestMeta>
-  ): Promise<import("./types.js").ControlResponse<TResponsePayload, TResponseMeta>> {
-    throw new Error("not implemented");
+    request: ControlRequest<TRequestPayload, TRequestMeta>
+  ): Promise<ControlResponse<TResponsePayload, TResponseMeta>> {
+    const context: RuntimeContext = {
+      createSession(sessionRequest, options) {
+        return new LocalSession(sessionRequest, options);
+      }
+    };
+
+    try {
+      return await this.options.handler(request, context);
+    } catch (error) {
+      return {
+        requestId: request.id,
+        ok: false,
+        error: {
+          message: error instanceof Error ? error.message : String(error)
+        },
+        completedAt: new Date()
+      };
+    }
   }
 }
