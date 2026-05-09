@@ -93,3 +93,59 @@ export type SessionResponseOptions<
   payload?: TPayload;
   meta?: TMeta;
 };
+
+export type Session = {
+  readonly id: string;
+  readonly requestId: string;
+  emit(event: SessionEvent): void;
+  onEvent(listener: SessionListener, options?: SessionSubscribeOptions): Unsubscribe;
+  on<TType extends SessionEventType>(
+    type: TType,
+    listener: SessionListener<SessionEventOf<TType>>,
+    options?: SessionSubscribeOptions
+  ): Unsubscribe;
+  history(): readonly SessionEvent[];
+  response<TPayload = undefined, TMeta = Record<string, unknown>>(
+    options?: SessionResponseOptions<TPayload, TMeta>
+  ): ControlResponse<TPayload, TMeta>;
+};
+
+export type RuntimeContext = {
+  createSession(request: ControlRequest, options?: { id?: string }): Session;
+};
+
+export type RuntimeHandler<
+  TRequestPayload = unknown,
+  TResponsePayload = unknown,
+  TRequestMeta = Record<string, unknown>,
+  TResponseMeta = Record<string, unknown>
+> = (
+  request: ControlRequest<TRequestPayload, TRequestMeta>,
+  context: RuntimeContext
+) => MaybePromise<ControlResponse<TResponsePayload, TResponseMeta>>;
+
+export type ConnectorHandler<
+  TRequestPayload = unknown,
+  TResponsePayload = unknown,
+  TRequestMeta = Record<string, unknown>,
+  TResponseMeta = Record<string, unknown>
+> = (
+  request: ControlRequest<TRequestPayload, TRequestMeta>
+) => Promise<ControlResponse<TResponsePayload, TResponseMeta>>;
+
+export type Connector<
+  TRequestPayload = unknown,
+  TResponsePayload = unknown,
+  TRequestMeta = Record<string, unknown>,
+  TResponseMeta = Record<string, unknown>
+> = {
+  name: string;
+  start(handler: ConnectorHandler<TRequestPayload, TResponsePayload, TRequestMeta, TResponseMeta>): Promise<void>;
+  stop(): Promise<void>;
+};
+
+export type ControlRuntime = {
+  start(): Promise<void>;
+  stop(): Promise<void>;
+  isRunning(): boolean;
+};
