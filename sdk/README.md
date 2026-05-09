@@ -9,3 +9,25 @@ The SDK only provides contracts, runtime orchestration, and session events. It d
 ```bash
 npm install @nodeterm/sdk
 ```
+
+## Simple Request/Response
+
+```ts
+import { createRuntime } from "@nodeterm/sdk";
+
+const runtime = createRuntime({
+  connectors: [connector],
+  async handler(request) {
+    return {
+      requestId: request.id,
+      ok: true,
+      payload: {
+        received: request.payload
+      },
+      completedAt: new Date()
+    };
+  }
+});
+
+await runtime.start();
+```
