@@ -60,3 +60,42 @@ describe("createRuntime", () => {
     assert.deepEqual(response.payload, { echoed: "hello" });
     await runtime.stop();
   });
+
+  it("preserves payload, actor, source, and meta without policy changes", async () => {
+    const connector = new MemoryConnector("memory");
+    let captured;
+    const runtime = createRuntime({
+      connectors: [connector],
+      async handler(request) {
+        captured = request;
+        return {
+          requestId: request.id,
+          ok: true,
+          completedAt: new Date()
+        };
+      }
+    });
+
+    const receivedAt = new Date("2026-01-02T00:00:00.000Z");
+    await runtime.start();
+    await connector.send(
+      { command: "anything --unsafe" },
+      {
+        id: "req-2",
+        source: "custom-tool",
+        actor: { id: "actor-1", name: "Feli" },
+        meta: { any: ["shape", 123] },
+        receivedAt
+      }
+    );
+
+    assert.deepEqual(captured, {
+      id: "req-2",
+      source: "custom-tool",
+      actor: { id: "actor-1", name: "Feli" },
+      payload: { command: "anything --unsafe" },
+      meta: { any: ["shape", 123] },
+      receivedAt
+    });
+    await runtime.stop();
+  });
