@@ -153,3 +153,22 @@ describe("createRuntime", () => {
     ]);
     await runtime.stop();
   });
+
+  it("turns handler errors into failed responses", async () => {
+    const connector = new MemoryConnector("memory");
+    const runtime = createRuntime({
+      connectors: [connector],
+      async handler() {
+        throw new Error("boom");
+      }
+    });
+
+    await runtime.start();
+    const response = await connector.send({ text: "hello" }, { id: "req-4" });
+
+    assert.equal(response.requestId, "req-4");
+    assert.equal(response.ok, false);
+    assert.deepEqual(response.error, { message: "boom" });
+    await runtime.stop();
+  });
+});
