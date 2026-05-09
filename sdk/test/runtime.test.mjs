@@ -99,3 +99,29 @@ describe("createRuntime", () => {
     });
     await runtime.stop();
   });
+
+  it("returns session events to connectors, including replayed events", async () => {
+    const connector = new MemoryConnector("memory");
+    const runtime = createRuntime({
+      connectors: [connector],
+      async handler(request, context) {
+        const session = context.createSession(request, { id: "session-1" });
+        session.emit({ type: "output", stream: "stdout", data: "started\n" });
+        session.emit({ type: "done", exitCode: 0 });
+        return session.response();
+      }
+    });
+
+    await runtime.start();
+    const response = await connector.send({ job: "stream" }, { id: "req-3" });
+    const events = [];
+    response.session.onEvent((event) => events.push(event));
+
+    assert.equal(response.ok, true);
+    assert.equal(response.session.id, "session-1");
+    assert.deepEqual(events, [
+      { type: "output", stream: "stdout", data: "started\n" },
+      { type: "done", exitCode: 0 }
+    ]);
+    await runtime.stop();
+  });
