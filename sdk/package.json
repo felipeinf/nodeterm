@@ -1,6 +1,6 @@
 {
   "name": "@nodeterm/sdk",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Generic Node.js SDK for request/response and session-based communication between local machines and external tools.",
   "type": "module",
   "engines": {
@@ -20,13 +20,14 @@
     "access": "public"
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "npm run build && node --test test/**/*.test.mjs",
-    "prepack": "npm run build"
+    "prepack": "npm run build && cp ../README.md README.md"
   },
   "keywords": [
     "terminal",
